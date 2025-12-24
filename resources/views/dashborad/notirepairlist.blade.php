@@ -19,19 +19,19 @@
     @endif
 
     {{-- Desktop View --}}
-    <div class="card shadow-sm d-none d-md-block">
+    <div class="card shadow-sm d-none d-md-block border-0">
         <div class="card-body table-responsive">
             <table id="notiTable" class="table table-hover align-middle">
                 <thead class="table-primary text-center">
                     <tr>
-                        <th style="width: 8%">รหัส</th>
+                        <th style="width: 10%">รหัสเเจ้งซ่อม</th>
                         <th style="width: 12%">อุปกรณ์</th>
-                        <th style="width: 25%">รายละเอียด</th>
-                        <th style="width: 15%">สาขา / โซน</th> {{-- ✅ หัวข้อใหม่ --}}
+                        <th style="width: 23%">รายละเอียด</th>
+                        <th style="width: 15%">สาขา</th>
                         <th style="width: 10%">วันที่แจ้ง</th>
                         <th style="width: 10%">อัปเดตล่าสุด</th>
                         <th style="width: 10%">สถานะ</th>
-                        <th style="width: 10%">จัดการ</th>
+                        <th style="width: 15%">จัดการ</th>
                     </tr>
                 </thead>
                 <tbody class="text-center">
@@ -40,6 +40,7 @@
                             $status = $item->status ?? 'ได้รับของแล้ว';
                             $isCompleted = str_contains($status, 'ซ่อมงานเสร็จแล้ว');
                             $displayStatus = $isCompleted ? 'ซ่อมเสร็จสิ้น' : $status;
+
                             $color = match ($status) {
                                 'ได้รับของแล้ว' => 'primary',
                                 'กำลังดำเนินการซ่อม | ช่างStore' => 'warning',
@@ -49,40 +50,94 @@
                             };
                         @endphp
                         <tr>
-                            <td class="fw-bold">{{ $item->NotirepairId }}</td>
-                            <td>{{ $item->equipmentName }}</td>
-                            <td class="text-start small">{{ $item->DeatailNotirepair }}</td>
-                            {{-- ✅ แสดงรหัสสาขา และ ชื่อสาขา --}}
+                            {{-- ส่วนที่ปรับปรุง: รหัส JobId แบบอักษรปกติ สีฟ้า --}}
+                            <td>
+                                <span class="text-primary fw-bold" style="font-size: 0.85rem;">
+                                    #{{ $item->JobId ?? $item->NotirepairId }}
+                                </span>
+                            </td>
+
+                            <td class="fw-bold">{{ $item->equipmentName }}</td>
+
+                            <td class="text-start small">
+                                <div class="text-truncate" style="max-width: 220px;" title="{{ $item->DeatailNotirepair }}">
+                                    {{ $item->DeatailNotirepair }}
+                                </div>
+                            </td>
+
                             <td>
                                 <div class="fw-bold text-dark">{{ $item->branchCode }}</div>
-                                <div class="small text-muted text-truncate" style="max-width: 150px;">
-                                    {{-- {{ $item->zone ?? 'ไม่ระบุโซน' }}</div> --}}
-                                    เอสพลานาด</div>
-
+                                <div class="small text-muted">เอสพลานาด</div>
                             </td>
+
                             <td class="small">
-                                {{ $item->DateNotirepair ? date('d-m-Y H:i', strtotime($item->DateNotirepair)) : '-' }}</td>
+                                {{ $item->DateNotirepair ? date('d-m-Y H:i', strtotime($item->DateNotirepair)) : '-' }}
+                            </td>
+
                             <td class="small">
-                                {{ $item->statusDate ? date('d-m-Y H:i', strtotime($item->statusDate)) : '-' }}</td>
-                            <td><span class="badge bg-{{ $color }}">{{ $displayStatus }}</span></td>
+                                {{ $item->statusDate ? date('d-m-Y H:i', strtotime($item->statusDate)) : '-' }}
+                            </td>
+
                             <td>
-                                @if ($isCompleted)
-                                    <button class="btn btn-outline-secondary btn-sm" disabled>เสร็จสิ้น</button>
-                                @else
-                                    <a href="{{ route('noti.show_update_form', $item->NotirepairId) }}"
-                                        class="btn btn-warning btn-sm">
-                                        <i class="bi bi-pencil-square"></i> อัปเดต
+                                <span class="badge bg-{{ $color }} fw-normal">{{ $displayStatus }}</span>
+                            </td>
+
+
+                            {{-- <td>
+                                <div class="d-flex gap-1 justify-content-center">
+                                
+                                    <a href="{{ route('noti.edit', $item->NotirepairId) }}"
+                                       class="btn btn-outline-primary btn-sm" title="แก้ไขข้อมูล">
+                                        <i class="bi bi-pencil"></i>
                                     </a>
-                                @endif
+    
+                                
+                                    @if ($isCompleted)
+                                        <button class="btn btn-outline-secondary btn-sm" disabled title="เสร็จสิ้นแล้ว">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                    @else
+                                        <a href="{{ route('noti.show_update_form', $item->NotirepairId) }}"
+                                           class="btn btn-warning btn-sm" title="อัปเดตสถานะ">
+                                            <i class="bi bi-gear-fill"></i>
+                                        </a>
+                                    @endif
+                                </div>
+                            </td> --}}
+                            <td>
+                                <div class="d-flex gap-2 justify-content-center">
+                                    {{-- 1. ปุ่มอัปเดตสถานะ หรือ ปุ่มเรียบร้อย (อยู่ข้างหน้า) --}}
+                                    @if ($isCompleted)
+                                        <button class="btn btn-outline-secondary btn-sm" disabled>
+                                            <i class="bi bi-check-circle"></i> เรียบร้อย
+                                        </button>
+                                    @else
+                                        <a href="{{ route('noti.show_update_form', $item->NotirepairId) }}"
+                                            class="btn btn-warning btn-sm" title="อัพเดตสถานะ">
+                                            <i class="bi bi-pencil-square"></i> อัปเดต
+                                        </a>
+                                    @endif
+                                
+                                    {{-- 2. ปุ่มแก้ไขข้อมูลหลัก (ย้ายมาไว้ข้างหลัง) --}}
+                                    {{-- <a href="{{ route('noti.edit', $item->NotirepairId) }}"
+                                        class="btn btn-outline-primary btn-sm" title="แก้ไขข้อมูล">
+                                        <i class="bi bi-pencil"></i>
+                                    </a> --}}
+                                    <a href="{{ route('noti.edit', $item->NotirepairId) }}"
+                                        class="btn btn-primary btn-sm fw-bold">
+                                        <i class="bi bi-pencil"></i> แก้ไข
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
-        <div class="mt-4 d-flex justify-content-center">
-            {{ $noti->links('pagination::bootstrap-5') }}
-        </div>
+    </div>
+    <div class="mt-4 d-flex justify-content-center">
+        {{ $noti->links('pagination::bootstrap-5') }}
+    </div>
     </div>
 
     {{-- Mobile View --}}
@@ -97,7 +152,7 @@
                     'ได้รับของแล้ว' => ['color' => 'primary', 'icon' => 'bi-box-seize', 'bg' => '#e7f1ff'],
                     'กำลังดำเนินการซ่อม | ช่างStore' => ['color' => 'warning', 'icon' => 'bi-tools', 'bg' => '#fff3cd'],
                     'ส่งSuplierแล้ว' => ['color' => 'info', 'icon' => 'bi-truck', 'bg' => '#cff4fc'],
-                    'ซ่อมงานเสร็แเล้ว | ช่างStore', 'ซ่อมงานเสร็จแล้ว | Supplier' => [
+                    'ซ่อมงานเสร็จแล้ว | ช่างStore', 'ซ่อมงานเสร็จแล้ว | Supplier' => [
                         'color' => 'success',
                         'icon' => 'bi-check-circle-fill',
                         'bg' => '#d1e7dd',
@@ -115,7 +170,8 @@
                         {{-- Header: ID และ Status Badge --}}
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
-                                <span class="text-muted small fw-bold">#{{ $item->NotirepairId }}</span>
+                                {{-- <span class="text-muted small fw-bold">#{{ $item->NotirepairId}}</span> --}}
+                                <span class="text-muted small fw-bold">#{{ $item->JobId }}</span>
                                 <h6 class="fw-bold mb-0 text-dark">{{ $item->equipmentName }}</h6>
                             </div>
                             <span class="badge rounded-pill bg-{{ $statusConfig['color'] }} px-3 py-2">
@@ -144,7 +200,7 @@
                         <hr class="my-2 opacity-25">
 
                         {{-- Footer: วันที่ และ ปุ่มจัดการ --}}
-                        <div class="d-flex justify-content-between align-items-center mt-3">
+                        {{-- <div class="d-flex justify-content-between align-items-center mt-3">
                             <div class="text-muted" style="font-size: 0.75rem;">
                                 <div><i class="bi bi-calendar3 me-1"></i>
                                     {{ date('d/m/y H:i', strtotime($item->DateNotirepair)) }}</div>
@@ -160,6 +216,33 @@
                                     <i class="bi bi-check-all"></i> งานเรียบร้อย
                                 </span>
                             @endif
+                        </div> --}}
+                        {{-- ค้นหาส่วนของปุ่มจัดการด้านล่างของการ์ด Mobile --}}
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted" style="font-size: 0.75rem;">
+                                <div><i class="bi bi-calendar3 me-1"></i>
+                                    {{ date('d/m/y H:i', strtotime($item->DateNotirepair)) }}</div>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                {{-- ปุ่มแก้ไขข้อมูลหลัก (แบบไอคอนวงกลม) --}}
+                                <a href="{{ route('noti.edit', $item->NotirepairId) }}"
+                                    class="btn btn-outline-primary btn-sm rounded-pill shadow-sm">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+
+                                {{-- ปุ่มอัปเดตสถานะ --}}
+                                @if (!$isCompleted)
+                                    <a href="{{ route('noti.show_update_form', $item->NotirepairId) }}"
+                                        class="btn btn-warning btn-sm fw-bold px-3 shadow-sm" style="border-radius: 8px;">
+                                        <i class="bi bi-pencil-square me-1"></i> อัปเดต
+                                    </a>
+                                @else
+                                    <span class="text-success small fw-bold bg-light px-2 py-1 rounded">
+                                        <i class="bi bi-check-all"></i> เรียบร้อย
+                                    </span>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>

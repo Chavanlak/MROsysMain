@@ -143,7 +143,9 @@
                         };
                     @endphp
                             <tr>
-                                <td class="ps-3 fw-bold text-primary">#{{ $job->NotirepairId }}</td>
+                                {{-- <td class="ps-3 fw-bold text-primary">#{{ $job->NotirepairId }}</td> --}}
+                                <td class="ps-3 fw-bold text-primary">#{{ $job->JobId}}</td>
+
                                 <td><span
                                         class="badge rounded-pill bg-secondary bg-opacity-10 text-secondary border border-secondary small">{{ $job->branchCode }}</span>
                                 </td>
@@ -194,7 +196,8 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
-                                <span class="fw-bold text-primary">#{{ $job->NotirepairId }}</span>
+                                <span class="fw-bold text-primary">#{{$job->JobId}}</span>
+                                {{-- <span class="fw-bold text-primary">#{{ $job->NotirepairId }}</span> --}}
                                 <div class="h6 fw-bold mt-1 mb-0">{{ $job->equipmentName }}</div>
                             </div>
                             <span class="badge bg-light text-dark border">{{ $job->branchCode }}</span>

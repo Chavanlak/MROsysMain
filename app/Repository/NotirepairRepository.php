@@ -312,7 +312,29 @@ class NotirepairRepository
                 END"), 'like', "%$searchTerm%");
             });
         }
-        // 4. กรองตามสถานะ (Status Filter)
+       
+        if ($statusFilter) {
+            if ($statusFilter === 'ปิดงานเรียบร้อย') {
+                $query->where('notirepair.closedJobs', '!=', 'ยังไม่ปิดงาน');
+            } elseif ($statusFilter === 'ยังไม่ได้รับของ') {
+                $query->where('notirepair.closedJobs', '=', 'ยังไม่ปิดงาน')
+                    ->where(function ($q) {
+                        $q->whereNull('latest_status.status')
+                            ->orWhere('latest_status.status', 'LIKE', '%ยังไม่ได้รับของ%');
+                            // ->orWhere('latest_status.status','LIKE','%ได้รับของเเล้ว%');
+                    });
+            } else {
+                // สำหรับสถานะอื่นๆ เช่น 'ได้รับของแล้ว', 'ส่งSuplierแล้ว'
+                // แนะนำให้ตัดคำยาวๆ ให้สั้นลง หรือใช้ส่วนหนึ่งของคำในการค้นหา
+                // หรือใช้ trim() และจัดการเรื่องสระเอสองตัว (Optional)
+                $cleanFilter = trim($statusFilter);
+                $query->where('notirepair.closedJobs', '=', 'ยังไม่ปิดงาน')
+                    ->where('latest_status.status', 'LIKE', "%$cleanFilter%");
+            }
+        }
+        return $query->orderBy('notirepair.DateNotirepair', 'desc')->paginate($perPage);
+    }
+     // 4. กรองตามสถานะ (Status Filter)
         // if ($statusFilter) {
         //     if ($statusFilter === 'ปิดงานเรียบร้อย') {
         //         $query->where('notirepair.closedJobs', '!=', 'ยังไม่ปิดงาน');
@@ -330,28 +352,6 @@ class NotirepairRepository
         // }
         // 4. ส่วนการกรองจาก Dropdown (Select Filter)
         // ไฟล์ NotirepairRepository.php ส่วนการกรอง (Status Filter)
-        if ($statusFilter) {
-            if ($statusFilter === 'ปิดงานเรียบร้อย') {
-                $query->where('notirepair.closedJobs', '!=', 'ยังไม่ปิดงาน');
-            } elseif ($statusFilter === 'ยังไม่ได้รับของ') {
-                $query->where('notirepair.closedJobs', '=', 'ยังไม่ปิดงาน')
-                    ->where(function ($q) {
-                        $q->whereNull('latest_status.status')
-                            ->orWhere('latest_status.status', 'LIKE', '%ยังไม่ได้รับของ%');
-                            // ->orWhere('latest_status.status','LIKE','%ได้รับของเเล้ว%');
-                    });
-            } else {
-                // สำหรับสถานะอื่นๆ เช่น 'ได้รับของแล้ว', 'ส่งSuplierแล้ว'
-                // แนะนำให้ตัดคำยาวๆ ให้สั้นลง หรือใช้ส่วนหนึ่งของคำในการค้นหา
-                // หรือใช้ trim() และจัดการเรื่องสระเอสองตัว (Optional)
-                $cleanFilter = trim($statusFilter);
-
-                $query->where('notirepair.closedJobs', '=', 'ยังไม่ปิดงาน')
-                    ->where('latest_status.status', 'LIKE', "%$cleanFilter%");
-            }
-        }
-        return $query->orderBy('notirepair.DateNotirepair', 'desc')->paginate($perPage);
-    }
     // 4. กรองตามสถานะ (Status Filter)
     // if ($statusFilter) {
     //     if ($statusFilter === 'ปิดงานเรียบร้อย') {

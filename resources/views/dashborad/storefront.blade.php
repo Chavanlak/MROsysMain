@@ -20,7 +20,7 @@
             <table id="notiTable" class="table table-hover align-middle">
                 <thead class="table-primary text-center">
                     <tr>
-                        <th style="width: 10%">รหัสแจ้งซ่อม</th>
+                        <th style="width: 15%">รหัสแจ้งซ่อม</th>
                         <th style="width: 15%">อุปกรณ์</th>
                         <th style="width: 30%">รายละเอียด</th>
                         <th style="width: 10%">วันที่แจ้ง</th>
@@ -36,18 +36,26 @@
                             $isClosed = ($item->closedJobs === 'ปิดงานเรียบร้อย');
                             $color = $isClosed ? 'success' : match ($status) {
                                 'ยังไม่ได้รับของ' => 'danger',
-                                'ได้รับของเเล้ว' => 'primary',
+                                'ได้รับของแล้ว' => 'primary',
                                 default => 'secondary',
                             };
                             $displayStatus = $isClosed ? 'ปิดงานเรียบร้อย' : $status;
                         @endphp
                         <tr>
-                            <td>{{ $item->NotirepairId }}</td>
-                            <td>{{ $item->equipmentName }}</td>
-                            <td class="text-start">{{ $item->DeatailNotirepair }}</td>
+                            {{-- <td>{{ $item->NotirepairId }}</td> --}}
+                            {{-- <td>
+                                <span class="fw-bold text-primary">{{ $item->JobId ?? $item->NotirepairId }}</span>
+                            </td>                             --}}
+                            <td>
+                                <span class="text-primary fw-bold" style="font-size: 0.85rem;">
+                                    #{{ $item->JobId ?? $item->NotirepairId }}
+                                </span>
+                            </td>
+                            <td>{{ $item->equipmentName}}</td>
+                            <td class="text-start">{{ $item->DeatailNotirepair}}</td>
                             <td>{{ $item->DateNotirepair ? date('d-m-Y H:i', strtotime($item->DateNotirepair)) : '-' }}</td>
                             <td>{{ $item->statusDate ? date('d-m-Y H:i', strtotime($item->statusDate)) : '-' }}</td>
-                            <td><span class="badge bg-{{ $color }}">{{ $displayStatus }}</span></td>
+                            <td><span class="badge bg-{{ $color }}">{{ $displayStatus}}</span></td>
                             <td>
                                 @if ($isClosed)
                                     <span class="text-success fw-bold"><i class="bi bi-check-all"></i> ปิดงานแล้ว</span>
@@ -59,7 +67,7 @@
                                                 <i class="bi bi-box-seam"></i> รับของ
                                             </button>
                                         </form>
-                                    @elseif ($status === 'ได้รับของเเล้ว')
+                                    @elseif ($status === 'ได้รับของแล้ว')
                                         <button type="button" class="btn btn-dark btn-sm w-100 btn-close-job"
                                             data-id="{{ $item->NotirepairId }}" 
                                             data-name="{{ $item->equipmentName }}">
@@ -79,13 +87,12 @@
     </div>
 
     {{-- Mobile View --}}
+{{-- Mobile View --}}
 <div class="d-md-none">
     @foreach ($noti as $item)
         @php
             $status = $item->status ?? 'ยังไม่ได้รับของ';
             $isClosed = ($item->closedJobs === 'ปิดงานเรียบร้อย');
-            
-            // กำหนดโทนสี
             $themeColor = $isClosed ? '#198754' : ($status === 'ยังไม่ได้รับของ' ? '#dc3545' : '#0d6efd');
             $bgColor = $isClosed ? '#f8fff9' : ($status === 'ยังไม่ได้รับของ' ? '#fffafb' : '#f0f7ff');
         @endphp
@@ -93,46 +100,54 @@
         <div class="card mb-3 border-0 shadow-sm" style="border-radius: 15px; overflow: hidden; background-color: {{ $bgColor }};">
             <div class="d-flex">
                 {{-- แถบสถานะด้านซ้าย --}}
-                <div style="width: 6px; background-color: {{ $themeColor }};"></div>
+                <div style="width: 6px; background-color: {{ $themeColor }}; flex-shrink: 0;"></div>
                 
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                            <span class="text-muted small fw-bold">#{{ $item->NotirepairId }}</span>
-                            <h6 class="mb-0 fw-bold text-dark">{{ $item->equipmentName }}</h6>
+                <div class="card-body p-3" style="min-width: 0;"> {{-- ใส่ min-width: 0 เพื่อให้ text-truncate ทำงาน --}}
+                    <div class="d-flex justify-content-between align-items-start mb-2 gap-2">
+                        <div style="min-width: 0; flex: 1;"> {{-- ให้ส่วนหัวข้อยืดหยุ่น --}}
+                            <span class="text-muted small fw-bold">#{{ $item->JobId ?? $item->NotirepairId }}</span>
+                            {{-- ใช้ text-truncate เพื่อกันชื่ออุปกรณ์ยาวเกินไปจนเบียด Badge --}}
+                            <h6 class="mb-0 fw-bold text-dark text-truncate">{{ $item->equipmentName }}</h6>
                         </div>
-                        {{-- Badge เล็กๆ มุมขวา --}}
-                        <span class="badge rounded-pill" style="background-color: {{ $themeColor }}; font-size: 0.7rem;">
+                        {{-- Badge สถานะ --}}
+                        <span class="badge rounded-pill flex-shrink-0" style="background-color: {{ $themeColor }}; font-size: 0.7rem; padding: 0.4em 0.8em;">
                             {{ $isClosed ? 'ปิดงานแล้ว' : $status }}
                         </span>
                     </div>
 
-                    <p class="text-secondary mb-3 small" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                    {{-- แก้ไขคำอธิบาย: เพิ่ม word-break เพื่อให้ตัวอักษรที่ติดกันยาวๆ ตัดบรรทัดได้ --}}
+                    <p class="text-secondary mb-3 small" style="
+                        display: -webkit-box; 
+                        -webkit-line-clamp: 3; 
+                        -webkit-box-orient: vertical; 
+                        overflow: hidden; 
+                        word-break: break-word; {{-- สำคัญ: บังคับตัดคำที่ยาวติดกัน --}}
+                        line-height: 1.4;
+                    ">
                         <i class="bi bi-info-circle me-1"></i>{{ $item->DeatailNotirepair }}
                     </p>
 
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex justify-content-between align-items-center mt-auto">
                         <div class="text-muted" style="font-size: 0.75rem;">
                             <i class="bi bi-calendar3 me-1"></i>{{ date('d/m/y H:i', strtotime($item->DateNotirepair)) }}
                         </div>
 
-                        {{-- ส่วนของปุ่ม Action --}}
-                        <div>
+                        <div class="flex-shrink-0 ms-2">
                             @if (!$isClosed)
                                 @if ($status === 'ยังไม่ได้รับของ')
                                     <form action="{{ route('noti.accept', $item->NotirepairId) }}" method="POST">
                                         @csrf
                                         <button type="submit" class="btn btn-sm px-3 py-1 fw-bold" 
                                             style="background-color: #198754; color: white; border-radius: 8px; font-size: 0.8rem;">
-                                            <i class="bi bi-box-arrow-in-right me-1"></i> รับของ
+                                            รับของ
                                         </button>
                                     </form>
-                                @elseif ($status === 'ได้รับของเเล้ว')
+                                @elseif ($status === 'ได้รับของแล้ว') {{-- เช็คคำว่า 'แล้ว' ให้ตรงกับ Database --}}
                                     <button type="button" class="btn btn-sm px-3 py-1 fw-bold btn-close-job"
                                         data-id="{{ $item->NotirepairId }}" 
                                         data-name="{{ $item->equipmentName }}"
                                         style="background-color: #212529; color: white; border-radius: 8px; font-size: 0.8rem;">
-                                        <i class="bi bi-check2-circle me-1"></i> ปิดงาน
+                                        ปิดงาน
                                     </button>
                                 @endif
                             @else

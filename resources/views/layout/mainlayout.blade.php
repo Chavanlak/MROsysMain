@@ -272,7 +272,7 @@
 
                                 {{-- *** แก้ไขตรงนี้: เรียกชื่อจาก Session *** --}}
                                 <span class="d-none d-sm-block">
-                                    {{ Session::get('staffname') }}
+                                    {{Session::get('staffname')}}
                                 </span>
 
                             </button>

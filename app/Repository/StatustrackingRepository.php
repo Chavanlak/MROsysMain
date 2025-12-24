@@ -33,6 +33,8 @@ class StatustrackingRepository
     //          //จะเอา เเค่ status ไปใส่ใน DTO
     //     // ดึงแค่รายการแรก (สถานะล่าสุด)
     // }
+
+    // เอาไว้ค้นหาสถานะล่าสุดในการอัพเดทสถานะ
     public static function getLatestStatusByNotiRepairId($notiRepairId)
     {
         // ค้นหาสถานะล่าสุดตาม NotirepairId และเรียงจากมากไปน้อย
@@ -94,8 +96,6 @@ class StatustrackingRepository
         $statustracking->status = 'ได้รับของเเล้ว';
         // $statustracking->statustrackingId;
         $statustracking->save();
-       
-
         return $statustracking;
     }
     //     public static function acceptNotirepair($notirepaitid)
@@ -123,7 +123,8 @@ class StatustrackingRepository
 
     //     return $notiDetail;
     // }
-    //ดึงสถานะล่าสุดมา ไว้ใน object notiDetail
+
+    //ดึงสถานะล่าสุดมา ไว้ใน object notiDetail //เอาไปใช้ในการอัพเดทสถานะใน คอนโทรลเลอร์
     public static function getNotiDetails($notirepaitid)
     {
         // ดึงข้อมูลการแจ้งซ่อม พร้อมโหลดความสัมพันธ์ของสถานะ (ถ้ามี)
@@ -131,7 +132,6 @@ class StatustrackingRepository
 
             // เชื่อม Notirepair.equipmentId กับ Equipment.equipmentId
             ->leftJoin('equipment', 'equipment.equipmentId', '=', 'notirepair.equipmentId')
-
             ->where('NotirepairId', $notirepaitid)
             // ถ้ามีความสัมพันธ์ statusTracking อยู่แล้ว ก็เก็บไว้
             ->with('statusTracking')

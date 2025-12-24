@@ -226,7 +226,11 @@ class NotiRepairController extends Controller
         $today = Carbon::parse($noti->DateNotirepair)->toDateString();
         $dailyCount = Notirepair::whereDate('DateNotirepair', $today)->count();
         $paddedId = str_pad($dailyCount, 3, '0', STR_PAD_LEFT);
-        $subjectname = "เเจ้งปัญหา #MRO-" . $branchCode . "-" . $dateNotirepair . "-" . $paddedId;
+        // $subjectname = "เเจ้งปัญหา #MRO-" . $branchCode . "-" . $dateNotirepair . "-" . $paddedId;
+        $JobId = "MRO-".$branchCode. "-" . $dateNotirepair . "-" . $paddedId;
+        $noti->JobId = $JobId;
+        $noti->save();
+        $subjectname = "แจ้งปัญหา #" . $JobId;
         // $equipmentname = EquipmentRepository::getEquipmentnameByID($req->category)->equipmentName;
         // $subjectname = "แจ้งซ่อมอุปกรณ์ " . $equipmentname . " จากสาขา " . $branchDisplay;
 
@@ -248,8 +252,8 @@ class NotiRepairController extends Controller
         // Mail::to($recipients)->send(new NotiMail($data));
         return redirect()->route('success');
     }
-    //ส่วนของ dashbord
 
+    //ส่วนของ dashbordช่าง
     public static function checkNotiRepair(Request $request)
     {
         //ส่วนของหน้า login
@@ -320,6 +324,7 @@ class NotiRepairController extends Controller
     // return redirect()->route('noti.show_update_form', ['notirepaitid' => $notirepaitid])
     //         ->with('success', 'รับเรื่องเรียบร้อยแล้ว! เข้าสู่หน้าอัพเดตสถานะ');
     // }
+    
     //front
     public function acceptNotisRepair(Request $request, $notirepaitid)
     {
@@ -329,7 +334,8 @@ class NotiRepairController extends Controller
         if (!$noti) {
             return redirect()->back()->with('error', 'ไม่พบรายการแจ้งซ่อม');
         }
-
+        // $JobId = $noti->JobId ?? $notirepaitid;
+        $JobId = $noti->JobId;
         // 1. ตรวจสอบสถานะปัจจุบัน (ป้องกันการรับซ้ำ)
         $currentStatus = DB::connection('third')
             ->table('statustracking')
@@ -352,7 +358,9 @@ class NotiRepairController extends Controller
                 // 'updated_at' => Carbon::now(),
             ]);
 
-        return redirect()->back()->with('success', 'รายการแจ้งซ่อมรหัส ' . $notirepaitid . ' ได้รับเรื่องเรียบร้อยแล้ว');
+        // return redirect()->back()->with('success', 'รายการแจ้งซ่อมรหัส ' . $notirepaitid . ' ได้รับเรื่องเรียบร้อยแล้ว');
+        return redirect()->back()->with('success', 'รายการแจ้งซ่อมรหัส ' . $JobId . ' ได้รับเรื่องเรียบร้อยแล้ว');
+
     }
     // public static function closedJobs(Request $request,$notirepairid){
     //     $noti = NotirepairRepository::findById($notirepairid);
@@ -368,6 +376,7 @@ class NotiRepairController extends Controller
     //     return redirect()->back()->with('success', "ปิดงานรหัส $notirepairid เรียบร้อยแล้ว");
 
     // }
+    //dashborad frontstaff การปิดงานของพนักงาน
     public function closedJobs(Request $request, $notirepairid)
 {
     // 1. ค้นหาข้อมูลผ่าน Repo
@@ -397,6 +406,7 @@ class NotiRepairController extends Controller
         return redirect()->back()->with('error', 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' . $e->getMessage());
     }
 }
+//dashbordAdminช่าง
     public function showUpdateStatusForm($notirepaitid)
     {
         // ดึงข้อมูลการแจ้งซ่อมที่ต้องการอัพเดต
@@ -407,6 +417,37 @@ class NotiRepairController extends Controller
         // คืนค่า View dashborad.updatestatus
         return view('dashborad.updatestatus', compact('updatenoti'));
     }
+    //dashbordAdminช่าง
+public static function editUpdateNoti($notirepairid){
+    $updatenoti = StatustrackingRepository::getNotiDetails($notirepairid);
+    return view('dashborad.editnoti',compact('updatenoti'));
+}
+    //edit
+    // ฟังก์ชันแสดงหน้าแก้ไขข้อมูล
+public function editNoti($notirepaitid)
+{
+    $noti = NotiRepair::find($notirepaitid);
+    if (!$noti) {
+        return redirect()->back()->with('error', 'ไม่พบรายการแจ้งซ่อม');
+    }
+    return view('dashborad.editnoti', compact('noti')); // สร้างไฟล์ view นี้แยกต่างหาก
+}
+
+// ฟังก์ชันบันทึกการแก้ไข
+public function updateNotiData(Request $request)
+{
+    $noti = NotiRepair::find($request->NotirepairId);
+    if ($noti) {
+        $noti->equipmentName = $request->equipmentName;
+        $noti->DeatailNotirepair = $request->DeatailNotirepair;
+        // เพิ่มฟิลด์อื่นๆ ที่ต้องการให้แก้ได้
+        $noti->save();
+
+        return redirect()->route('noti.list')->with('success', 'แก้ไขข้อมูลรหัส ' . ($noti->JobId ?? $noti->NotirepairId) . ' สำเร็จ');
+    }
+    return redirect()->back()->with('error', 'เกิดข้อผิดพลาดในการแก้ไข');
+}
+//บันทึกการอัพเดทสถานะ
     public function updateStatus(Request $request)
     {
         $notirepaitid = $request->NotirepairId;

@@ -163,9 +163,11 @@ Route::middleware(['RoleMiddleware:AdminTechnicianStore'])->group(function () {
 
     // หน้าฟอร์มอัพเดตสถานะ (GET)
     Route::get('/updatestatus/form/{notirepaitid}', [NotiRepairController::class, 'showUpdateStatusForm'])->name('noti.show_update_form');
-
+    //เเก่้ไขสถานะ
+    Route::get('/noti/edit/{notirepaitid}', [NotiRepairController::class, 'editUpdateNoti'])->name('noti.edit');
     // ปุ่มบันทึกสถานะใหม่ (POST Form)
     Route::post('/updaterecive', [NotiRepairController::class, 'updateStatus'])->name('notiupdate');
+    
 
 });
 //clear session
