@@ -59,6 +59,7 @@ class NotirepairRepository
         $noti->branch = $branch;
         // 🛑 บันทึกรหัสสาขาใหม่ในคอลัมน์ branch_code ที่เพิ่มเข้ามา
         $noti->branchCode = $branchCode;
+        //[]
         $noti->DateNotirepair = Carbon::now();
         $noti->save();
         return $noti;
