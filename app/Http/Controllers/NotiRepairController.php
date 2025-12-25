@@ -376,6 +376,7 @@ class NotiRepairController extends Controller
     //     return redirect()->back()->with('success', "ปิดงานรหัส $notirepairid เรียบร้อยแล้ว");
 
     // }
+    //old
     //dashborad frontstaff การปิดงานของพนักงาน
     public function closedJobs(Request $request, $notirepairid)
 {
@@ -406,6 +407,44 @@ class NotiRepairController extends Controller
         return redirect()->back()->with('error', 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' . $e->getMessage());
     }
 }
+//new
+// public function closedJobs(Request $request, $notirepairid)
+// {
+//     $noti = NotirepairRepository::findById($notirepairid);
+//     if (!$noti) {
+//         return redirect()->back()->with('error', 'ไม่พบรายการแจ้งซ่อม');
+//     }
+
+//     // หา staffcode อย่างปลอดภัย
+//     if (session()->has('staff_code')) {
+//         $myStaffCode = session('staff_code');
+//     } elseif (auth()->check()) {
+//         $myStaffCode = auth()->user()->staffcode;
+//     } else {
+//         return redirect()->back()->with('error', 'ไม่พบรหัสพนักงาน กรุณาเข้าสู่ระบบใหม่');
+//     }
+
+//     try {
+//         DB::transaction(function () use ($notirepairid, $myStaffCode) {
+
+//             // 1. ปิดงานในตารางหลัก
+//             NotirepairRepository::closeJobInMainTable($notirepairid);
+
+//             // 2. บันทึกประวัติการปิดงาน
+//             DB::connection('third')->table('statustracking')->insert([
+//                 'NotirepairId' => $notirepairid,
+//                 'status'       => 'ปิดงานเรียบร้อย',
+//                 'staffcode'    => $myStaffCode,
+//                 'date_update'  => now()
+//             ]);
+//         });
+
+//         return redirect()->back()->with('success', 'ปิดงานเรียบร้อย');
+//     } catch (\Exception $e) {
+//         return redirect()->back()->with('error', 'ผิดพลาด: ' . $e->getMessage());
+//     }
+// }
+
 //dashbordAdminช่าง
     public function showUpdateStatusForm($notirepaitid)
     {

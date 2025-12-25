@@ -104,6 +104,21 @@ class StatustrackingRepository
     //         ->update(['status' => 'ได้รับของแล้ว']);
     // }
 
+
+    //ส่วนที่ใช้กับ office ว่าใครเป็นคนรับของเเละปิดงานซึ่ง เพิ่มฟิลล์ขึ้นมาในตาราง statustracking
+    public static function insertStatus(
+        int $notirepairId,
+        string $status
+    ) {
+        return Statustracking::create([
+            'NotirepairId' => $notirepairId,
+            'status'       => $status,
+            'staffcode'    => session('staffcode'),
+            'statusDate'   => now(),
+        ]);
+    }
+    
+    
     public static function updateStatusNotirepair($notirepaitid, $statusData)
     {
         $statustracking = new Statustracking();
