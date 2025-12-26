@@ -294,22 +294,28 @@ public static function getTrackingListForAdmin($searchTerm = null, $statusFilter
     | 2) subquery คนรับของ
     |--------------------------------------------------
     */
-    $receiverSub = DB::connection('third')->table('statustracking as st')
-        ->leftJoin(
-            DB::connection('mysql')->getDatabaseName() . '.staff_rc as src',
-            'st.staffcode',
-            '=',
-            'src.staffcode'
-        )
-        ->where('st.status', 'ได้รับของเเล้ว')
-        ->select(
-            'st.NotirepairId',
-            'src.staffName as receiver_name'
-        );
-
+    // $receiverSub = DB::connection('third')->table('statustracking as st')
+    //     ->leftJoin(
+    //         DB::connection('mysql')->getDatabaseName() . '.staff_rc as src',
+    //         'st.staffcode',
+    //         '=',
+    //         'src.staffcode'
+    //     )
+    //     ->where('st.status', 'ได้รับของเเล้ว')
+    //     ->select(
+    //         'st.NotirepairId',
+    //         'src.staffName as receiver_name'
+    //     );
+/* 2) subquery คนรับของ */
+$receiverSub = DB::connection('third')->table('statustracking')
+    ->where('status', 'LIKE', '%ได้รับของ%') // ใช้ LIKE ปลอดภัยกว่าสระ แ หรือ เเ
+    ->select(
+        'NotirepairId',
+        'staffname as receiver_name' // ดึงจากคอลัมน์ staffname ที่คุณเพิ่งเพิ่มเข้าไป
+    );
     /*
     |--------------------------------------------------
-    | 3) query หลัก
+    | 3) query หลัก 
     |--------------------------------------------------
     */
     $query = DB::connection('third')->table('notirepair')

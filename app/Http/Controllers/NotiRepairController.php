@@ -353,6 +353,8 @@ class NotiRepairController extends Controller
             ->insert([
                 'NotirepairId' => $notirepaitid,
                 'status' => 'ได้รับของแล้ว',
+                'staffcode' => Session::get('staffcode'),
+                'staffname'=> Session::get('staffname'),
                 'statusDate' => Carbon::now(),
                 // 'created_at' => Carbon::now(),
                 // 'updated_at' => Carbon::now(),
@@ -378,7 +380,37 @@ class NotiRepairController extends Controller
     // }
     //old
     //dashborad frontstaff การปิดงานของพนักงาน
-    public function closedJobs(Request $request, $notirepairid)
+//     public function closedJobs(Request $request, $notirepairid)
+// {
+//     // 1. ค้นหาข้อมูลผ่าน Repo
+//     $noti = NotirepairRepository::findById($notirepairid);
+//     if (!$noti) {
+//         return redirect()->back()->with('error', 'ไม่พบรายการแจ้งซ่อม');
+//     }
+
+//     // 2. เช็คสถานะปัจจุบัน
+//     $currentStatus = NotirepairRepository::getCurrentStatus($notirepairid);
+//     if ($currentStatus !== 'ได้รับของแล้ว') {
+//         return redirect()->back()->with('error', 'ไม่สามารถปิดงานได้ (ต้องได้รับของก่อน)');
+//     }
+
+//     try {
+//         DB::transaction(function () use ($notirepairid) {
+//             // ✅ 3.1 อัปเดสตารางหลัก (ฟิลด์ closedJobs, DateCloseJobs)
+//             NotirepairRepository::closeJobInMainTable($notirepairid);
+
+//             // ✅ 3.2 บันทึกประวัติใน statustracking
+//             NotirepairRepository::updateStatusTracking($notirepairid, 'ปิดงาน');
+//         });
+
+//         return redirect()->back()->with('success', "ปิดงานรหัส $notirepairid และบันทึกข้อมูลลงฐานข้อมูลเรียบร้อยแล้ว");
+
+//     } catch (\Exception $e) {
+//         return redirect()->back()->with('error', 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' . $e->getMessage());
+//     }
+// }
+//ล่าสุด
+public function closedJobs(Request $request, $notirepairid)
 {
     // 1. ค้นหาข้อมูลผ่าน Repo
     $noti = NotirepairRepository::findById($notirepairid);
@@ -392,16 +424,21 @@ class NotiRepairController extends Controller
         return redirect()->back()->with('error', 'ไม่สามารถปิดงานได้ (ต้องได้รับของก่อน)');
     }
 
+    // --- เพิ่ม: ดึงข้อมูลพนักงานจาก Session ---
+    $staffcode = Session::get('staffcode');
+    $staffname = Session::get('staffname');
+
     try {
-        DB::transaction(function () use ($notirepairid) {
-            // ✅ 3.1 อัปเดสตารางหลัก (ฟิลด์ closedJobs, DateCloseJobs)
+        DB::transaction(function () use ($notirepairid, $staffcode, $staffname) {
+            // ✅ 3.1 อัปเดตตารางหลัก (ปิดงานเรียบร้อย)
             NotirepairRepository::closeJobInMainTable($notirepairid);
 
-            // ✅ 3.2 บันทึกประวัติใน statustracking
-            NotirepairRepository::updateStatusTracking($notirepairid, 'ปิดงาน');
+            // ✅ 3.2 บันทึกประวัติใน statustracking พร้อมชื่อพนักงาน
+            // เปลี่ยนจาก 'ปิดงาน' เป็น 'ปิดงานเรียบร้อย' เพื่อให้ตรงกับเงื่อนไขใน Blade
+            NotirepairRepository::updateStatusTracking($notirepairid, 'ปิดงานเรียบร้อย', $staffcode, $staffname);
         });
 
-        return redirect()->back()->with('success', "ปิดงานรหัส $notirepairid และบันทึกข้อมูลลงฐานข้อมูลเรียบร้อยแล้ว");
+        return redirect()->back()->with('success', "ปิดงานรหัส $notirepairid เรียบร้อยแล้ว");
 
     } catch (\Exception $e) {
         return redirect()->back()->with('error', 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' . $e->getMessage());
@@ -520,7 +557,6 @@ public function updateNotiData(Request $request)
     //     if ($role === 'Frontstaff') {
     //         //เพิ่ม
     //         $searchTerm = $request->input('search');
-
     //         // Subquery: หา statustrackingId ล่าสุด
     //         $latestStatusId = DB::connection('third')
     //             ->table('statustracking')
@@ -591,8 +627,6 @@ public function updateNotiData(Request $request)
             if (empty($frontstaffBranchCode)) {
                 return back()->with('error', 'ไม่พบข้อมูลสาขาในตาราง permission_bm สำหรับพนักงานคนนี้');
             }
-
-       
 
             $searchTerm = $request->input('search');
 
@@ -756,7 +790,6 @@ public function officerTracking(Request $request)
 {
     $search = $request->input('search');
     $status = $request->input('status');
-
     $jobs = NotirepairRepository::getTrackingListForAdmin($search, $status);
 
     // ยอดรวมทั้งหมด

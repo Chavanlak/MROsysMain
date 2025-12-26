@@ -128,52 +128,125 @@ class UserController extends Controller
 //     // ส่งไป Route /repair (ซึ่งมี Middleware customauth คอยเช็ค Session logged_in ที่เราเพิ่งสร้างข้างบน)
 //     return redirect('/repair')->with('success', 'เข้าสู่ระบบสำเร็จ');
 // }
-
 public function loginPost(Request $request) {
     $staffcode = $request->input('staffcode');
     $staffpassword = $request->input('staffpassword');
-    $loginMode = $request->input('login_mode');
+    $loginMode = $request->input('login_mode'); // ค่าจาก Select dropdown
 
+    // 1. ค้นหาผู้ใช้
     $user = DB::table('staff_rc')->where('staffcode', $staffcode)->first();
 
-    // 1. ตรวจสอบ User & Password
+    // 2. ตรวจสอบ User & Password
     if (!$user || $user->staffpassword != $staffpassword) {
         return redirect('/')->with('error', 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
     }
 
-    // 2. เก็บข้อมูลลง Session (ใช้แทน Auth)
+    // 3. ตรวจสอบสิทธิ์ (Role Validation) 
+    // เช็คว่าโหมดที่เลือก ตรงกับ Role ที่มีใน DB หรือไม่
+    $isAllowed = false;
+    $dbRole = strtolower($user->role);
+
+    switch ($loginMode) {
+        case 'repair':
+        case 'storefront':
+            // ทั้งสองโหมดนี้ต้องมี role เป็น frontstaff
+            if ($dbRole === 'frontstaff') $isAllowed = true;
+            break;
+            
+        case 'admintech':
+            // โหมดช่าง ต้องมี role เป็น admintechnicianstore หรือตามที่คุณตั้งไว้
+            if ($dbRole === 'admintechnicianstore' || $dbRole === 'notirepairlist') $isAllowed = true;
+            break;
+
+        case 'office':
+            // โหมดธุรการ
+            if ($dbRole === 'adminofficer' || $dbRole === 'office') $isAllowed = true;
+            break;
+    }
+
+    if (!$isAllowed) {
+        return redirect('/')->with('error', 'คุณไม่มีสิทธิ์เข้าใช้งานในโหมดที่เลือก (สิทธิ์ของคุณคือ: ' . $user->role . ')');
+    }
+
+    // 4. ถ้าผ่านหมด ให้เก็บ Session ข้อมูลจริงจาก DB
     Session::put('logged_in', true);
     Session::put('staffcode', $user->staffcode);
     Session::put('staffname', $user->staffname);
-    Session::put('role', $user->role);
+    Session::put('role', $user->role); // เก็บ Role จริงๆ ไว้เช็คใน Middleware
 
-    // 3. จัดการเรื่องสาขา (สำหรับ FrontStaff)
-    if (in_array(strtolower($user->role), ['frontstaff'])) {
-        try {
-            $branchCode = PermissionBMRepository::getBranchCode($staffcode);
-            Session::put('branch_code', $branchCode);
-        } catch (\Exception $e) {
-            Session::put('branch_code', 'Unknown');
-        }
-    } else {
-        Session::put('branch_code', 'Store'); // Admin/Officer ให้เป็นส่วนกลาง
+    // 5. จัดการเรื่องสาขา (สำหรับ FrontStaff)
+    if ($dbRole === 'frontstaff') {
+        $branchCode = PermissionBMRepository::getBranchCode($staffcode);
+        Session::put('branch_code', $branchCode ?? 'Unknown');
     }
 
-    // 4. การ Redirect ตาม Mode และ Role
-    if ($loginMode === 'storefront') {
-        if (strtolower($user->role) === 'frontstaff') {
-            return redirect()->route('noti.storefront');
-        }
-        return redirect('/')->with('error', 'คุณไม่มีสิทธิ์เข้าโหมดหน้าร้าน');
-    }
-
-    // โหมดแจ้งซ่อมปกติ
-    return match ($user->role) {
-        'AdminTechnicianStore' => redirect()->route('noti.list'),
-        'AdminOfficer'         => redirect()->route('officer.tracking'),
-        default                => redirect('/repair'),
+    // 6. Redirect ไปยังหน้าที่เลือก
+    return match ($loginMode) {
+        'repair'     => redirect('/repair'),
+        'storefront' => redirect()->route('noti.storefront'),
+        'admintech'  => redirect()->route('noti.list'),
+        'office'     => redirect()->route('officer.tracking'),
+        default      => redirect('/'),
     };
 }
+//lasted
+// public function loginPost(Request $request) {
+//     $staffcode = $request->input('staffcode');
+//     $staffpassword = $request->input('staffpassword');
+//     $loginMode = $request->input('login_mode');
+//     $user = DB::table('staff_rc')->where('staffcode', $staffcode)->first();
+
+//     // 1. ตรวจสอบ User & Password
+//     if (!$user || $user->staffpassword != $staffpassword) {
+//         return redirect('/')->with('error', 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+//     }
+
+//     // 2. เก็บข้อมูลลง Session (ใช้แทน Auth)
+//     Session::put('logged_in', true);
+//     Session::put('staffcode', $user->staffcode);
+//     Session::put('staffname', $user->staffname);
+//     Session::put('role', $user->role);
+
+//     // 3. จัดการเรื่องสาขา (สำหรับ FrontStaff)
+//     if (in_array(strtolower($user->role), ['frontstaff'])) {
+//         try {
+//             $branchCode = PermissionBMRepository::getBranchCode($staffcode);
+//             Session::put('branch_code', $branchCode);
+//         } catch (\Exception $e) {
+//             Session::put('branch_code', 'Unknown');
+//         }
+//     } else {
+//         Session::put('branch_code', 'Store'); // Admin/Officer ให้เป็นส่วนกลาง
+//     }
+
+//     // 4. การ Redirect ตาม Mode และ Role
+//     if ($loginMode === 'storefront') {
+//         if (strtolower($user->role) === 'frontstaff') {
+//             return redirect()->route('noti.storefront');
+//         }
+        
+//         return redirect('/')->with('error', 'คุณไม่มีสิทธิ์เข้าโหมดหน้าร้าน');
+//     }
+//     if($loginMode === 'admintech'){
+//         if($user->role === 'notirepairlist'){
+//             return redirect()->route('noti.list');
+//         }
+//     }
+//     if($loginMode === 'office'){
+//         if($user->role === 'office'){
+//             return redirect()->route('officer.tracking');
+//         }
+//     }
+    
+        
+
+//     // โหมดแจ้งซ่อมปกติ
+//     return match ($user->role) {
+//         'AdminTechnicianStore' => redirect()->route('noti.list'),
+//         'AdminOfficer'         => redirect()->route('officer.tracking'),
+//         default                => redirect('/repair'),
+//     };
+// }
 //old
 // public function loginPost(Request $request){
 
